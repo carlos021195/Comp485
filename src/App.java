@@ -31,7 +31,7 @@ public class App
 
   public App()
   {
-    super("Directories Tree [Popup Menus]");
+    super("Directories Tree");
     setSize(400, 300);
 
     DefaultMutableTreeNode top = new DefaultMutableTreeNode(
@@ -97,9 +97,40 @@ public class App
       public void actionPerformed(ActionEvent e)
       {
                                 m_tree.repaint();
-        JOptionPane.showMessageDialog(App.this, 
-          "Delete option is not implemented",
-          "Info", JOptionPane.INFORMATION_MESSAGE);
+        DefaultMutableTreeNode selNode = (DefaultMutableTreeNode) m_tree
+            .getLastSelectedPathComponent();
+        if (selNode == null) {
+          return;
+        }
+        MutableTreeNode parent = (MutableTreeNode) (selNode.getParent());
+        if (parent == null) {
+          return;
+        }
+        MutableTreeNode toBeSelNode = (MutableTreeNode) selNode.getPreviousSibling();
+        if (toBeSelNode == null) {
+          toBeSelNode = (MutableTreeNode) selNode.getNextSibling();
+        }
+        if (toBeSelNode == null) {
+          toBeSelNode = parent;
+        }
+        TreeNode[] nodes = m_model.getPathToRoot(toBeSelNode);
+        TreePath path = new TreePath(nodes);
+        m_tree.scrollPathToVisible(path);
+        m_tree.setSelectionPath(path);
+        File dFile = getFileNode(selNode).getFile();
+        System.out.println(dFile.exists());
+        File deleteMe = new File(dFile.getPath());
+        m_model.removeNodeFromParent(selNode);
+        try{
+            if(deleteMe.delete()){
+                System.out.println(deleteMe.getName());
+            }
+            else{
+                System.out.println(dFile.getPath());
+            }
+        } catch(Exception err){
+            System.out.print(err.getMessage());
+        }
       }
     };
     m_popup.add(a1);
@@ -423,6 +454,8 @@ class FileNode
       if (nd.hasSubDirs())
         node.add(new DefaultMutableTreeNode( 
           new Boolean(true) ));
+        else
+            node.add(new DefaultMutableTreeNode());
     }
 
     return true;
