@@ -23,38 +23,11 @@ import javax.swing.table.*;
 import javax.swing.tree.*;
 import org.apache.commons.io.FileUtils;
 
-/**
- * A basic File Manager. Requires 1.6+ for the Desktop &amp; SwingWorker classes, amongst other
- * minor things.
- *
- * <p>Includes support classes FileTableModel &amp; FileTreeCellRenderer.
- *
- * <p>TODO Bugs
- *
- * <ul>
- *   <li>Still throws occasional AIOOBEs and NPEs, so some update on the EDT must have been missed.
- *   <li>Fix keyboard focus issues - especially when functions like rename/delete etc. are called
- *       that update nodes &amp; file lists.
- *   <li>Needs more testing in general.
- *       <p>TODO Functionality
- *   <li>Implement Read/Write/Execute checkboxes
- *   <li>Implement Copy
- *   <li>Extra prompt for directory delete (camickr suggestion)
- *   <li>Add File/Directory fields to FileTableModel
- *   <li>Double clicking a directory in the table, should update the tree
- *   <li>Move progress bar?
- *   <li>Add other file display modes (besides table) in CardLayout?
- *   <li>Menus + other cruft?
- *   <li>Implement history/back
- *   <li>Allow multiple selection
- *   <li>Add file search
- * </ul>
- */
 public class FileManager {
 
     /** Title of the application */
-    public static final String APP_TITLE = "FileMan";
-    /** Used to open/edit/print files. */
+    public static final String APP_TITLE = "COMP 485";
+    /** Used to open/edit/print files. DELETE ME*/
     private Desktop desktop;
     /** Provides nice icons and names for files. */
     private FileSystemView fileSystemView;
@@ -83,19 +56,14 @@ public class FileManager {
 
     /* File controls. */
     private JButton openFile;
-    private JButton printFile;
     private JButton editFile;
     private JButton deleteFile;
     private JButton newFile;
-    private JButton copyFile;
     /* File details. */
     private JLabel fileName;
     private JTextField path;
     private JLabel date;
     private JLabel size;
-    private JCheckBox readable;
-    private JCheckBox writable;
-    private JCheckBox executable;
     private JRadioButton isDirectory;
     private JRadioButton isFile;
 
@@ -253,24 +221,10 @@ public class FileManager {
                     });
             toolBar.add(editFile);
 
-            printFile = new JButton("Print");
-            printFile.setMnemonic('p');
-            printFile.addActionListener(
-                    new ActionListener() {
-                        public void actionPerformed(ActionEvent ae) {
-                            try {
-                                desktop.print(currentFile);
-                            } catch (Throwable t) {
-                                showThrowable(t);
-                            }
-                        }
-                    });
-            toolBar.add(printFile);
-
             // Check the actions are supported on this platform!
             openFile.setEnabled(desktop.isSupported(Desktop.Action.OPEN));
             editFile.setEnabled(desktop.isSupported(Desktop.Action.EDIT));
-            printFile.setEnabled(desktop.isSupported(Desktop.Action.PRINT));
+            // printFile.setEnabled(desktop.isSupported(Desktop.Action.PRINT));
 
             toolBar.addSeparator();
 
@@ -283,16 +237,6 @@ public class FileManager {
                         }
                     });
             toolBar.add(newFile);
-
-            copyFile = new JButton("Copy");
-            copyFile.setMnemonic('c');
-            copyFile.addActionListener(
-                    new ActionListener() {
-                        public void actionPerformed(ActionEvent ae) {
-                            showErrorMessage("'Copy' not implemented.", "Not implemented.");
-                        }
-                    });
-            toolBar.add(copyFile);
 
             JButton renameFile = new JButton("Rename");
             renameFile.setMnemonic('r');
@@ -313,23 +257,6 @@ public class FileManager {
                         }
                     });
             toolBar.add(deleteFile);
-
-            toolBar.addSeparator();
-
-            readable = new JCheckBox("Read  ");
-            readable.setMnemonic('a');
-            // readable.setEnabled(false);
-            toolBar.add(readable);
-
-            writable = new JCheckBox("Write  ");
-            writable.setMnemonic('w');
-            // writable.setEnabled(false);
-            toolBar.add(writable);
-
-            executable = new JCheckBox("Execute");
-            executable.setMnemonic('x');
-            // executable.setEnabled(false);
-            toolBar.add(executable);
 
             JPanel fileView = new JPanel(new BorderLayout(3, 3));
 
@@ -643,9 +570,6 @@ public class FileManager {
         path.setText(file.getPath());
         date.setText(new Date(file.lastModified()).toString());
         size.setText(file.length() + " bytes");
-        readable.setSelected(file.canRead());
-        writable.setSelected(file.canWrite());
-        executable.setSelected(file.canExecute());
         isDirectory.setSelected(file.isDirectory());
 
         isFile.setSelected(file.isFile());
@@ -731,7 +655,7 @@ class FileTableModel extends AbstractTableModel {
     private File[] files;
     private FileSystemView fileSystemView = FileSystemView.getFileSystemView();
     private String[] columns = {
-        "Icon", "File", "Path/name", "Size", "Last Modified", "R", "W", "E", "D", "F",
+        "Icon", "File", "Path/name", "Size", "Last Modified", "D", "F",
     };
 
     FileTableModel() {
@@ -756,14 +680,8 @@ class FileTableModel extends AbstractTableModel {
             case 4:
                 return file.lastModified();
             case 5:
-                return file.canRead();
-            case 6:
-                return file.canWrite();
-            case 7:
-                return file.canExecute();
-            case 8:
                 return file.isDirectory();
-            case 9:
+            case 6:
                 return file.isFile();
             default:
                 System.err.println("Logic Error");
@@ -785,9 +703,6 @@ class FileTableModel extends AbstractTableModel {
                 return Date.class;
             case 5:
             case 6:
-            case 7:
-            case 8:
-            case 9:
                 return Boolean.class;
         }
         return String.class;
