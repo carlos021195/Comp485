@@ -25,49 +25,32 @@ import org.apache.commons.io.FileUtils;
 
 public class FileManager {
 
-    /** Title of the application */
-    public static final String APP_TITLE = "COMP 485";
-    /** Used to open/edit/print files. DELETE ME*/
+    public static final String APP_TITLE = "COMP 485 Project";
     private Desktop desktop;
-    /** Provides nice icons and names for files. */
     private FileSystemView fileSystemView;
-
-    /** currently selected File. */
     private File currentFile;
-
-    /** Main GUI container */
     private JPanel gui;
-
-    /** File-system tree. Built Lazily */
     private JTree tree;
-
     private DefaultTreeModel treeModel;
-
-    /** Directory listing */
     private JTable table;
-
     private JProgressBar progressBar;
-    /** Table model for File[]. */
     private FileTableModel fileTableModel;
 
     private ListSelectionListener listSelectionListener;
     private boolean cellSizesSet = false;
     private int rowIconPadding = 6;
 
-    /* File controls. */
     private JButton openFile;
     private JButton editFile;
     private JButton deleteFile;
     private JButton newFile;
-    /* File details. */
     private JLabel fileName;
     private JTextField path;
     private JLabel date;
     private JLabel size;
-    private JRadioButton isDirectory;
-    private JRadioButton isFile;
+    private JLabel type;
 
-    /* GUI options/containers for new File/Directory creation.  Created lazily. */
+    /* GUI options/containers for new File/Directory creation. */
     private JPanel newFilePanel;
     private JRadioButton newTypeFile;
     private JTextField name;
@@ -140,7 +123,6 @@ public class FileManager {
             tree.expandRow(0);
             JScrollPane treeScroll = new JScrollPane(tree);
 
-            // as per trashgod tip
             tree.setVisibleRowCount(15);
 
             Dimension preferredSize = treeScroll.getPreferredSize();
@@ -162,7 +144,6 @@ public class FileManager {
             fileDetailsValues.add(fileName);
             fileDetailsLabels.add(new JLabel("Path/name", JLabel.TRAILING));
             path = new JTextField(5);
-            path.setEditable(false);
             fileDetailsValues.add(path);
             fileDetailsLabels.add(new JLabel("Last Modified", JLabel.TRAILING));
             date = new JLabel();
@@ -171,16 +152,8 @@ public class FileManager {
             size = new JLabel();
             fileDetailsValues.add(size);
             fileDetailsLabels.add(new JLabel("Type", JLabel.TRAILING));
-
-            JPanel flags = new JPanel(new FlowLayout(FlowLayout.LEADING, 4, 0));
-            isDirectory = new JRadioButton("Directory");
-            isDirectory.setEnabled(false);
-            flags.add(isDirectory);
-
-            isFile = new JRadioButton("File");
-            isFile.setEnabled(false);
-            flags.add(isFile);
-            fileDetailsValues.add(flags);
+            type = new JLabel();
+            fileDetailsValues.add(type);
 
             int count = fileDetailsLabels.getComponentCount();
             for (int ii = 0; ii < count; ii++) {
@@ -188,7 +161,6 @@ public class FileManager {
             }
 
             JToolBar toolBar = new JToolBar();
-            // mnemonics stop working in a floated toolbar
             toolBar.setFloatable(false);
 
             openFile = new JButton("Open");
@@ -570,9 +542,7 @@ public class FileManager {
         path.setText(file.getPath());
         date.setText(new Date(file.lastModified()).toString());
         size.setText(file.length() + " bytes");
-        isDirectory.setSelected(file.isDirectory());
-
-        isFile.setSelected(file.isFile());
+        type.setText(file.isDirectory() ? "Directory" : "File");
 
         JFrame f = (JFrame) gui.getTopLevelAncestor();
         if (f != null) {
@@ -655,7 +625,7 @@ class FileTableModel extends AbstractTableModel {
     private File[] files;
     private FileSystemView fileSystemView = FileSystemView.getFileSystemView();
     private String[] columns = {
-        "Icon", "File", "Path/name", "Size", "Last Modified", "D", "F",
+        "Icon", "File", "Path/name", "Size", "Last Modified",
     };
 
     FileTableModel() {
@@ -679,10 +649,6 @@ class FileTableModel extends AbstractTableModel {
                 return file.length();
             case 4:
                 return file.lastModified();
-            case 5:
-                return file.isDirectory();
-            case 6:
-                return file.isFile();
             default:
                 System.err.println("Logic Error");
         }
@@ -701,9 +667,6 @@ class FileTableModel extends AbstractTableModel {
                 return Long.class;
             case 4:
                 return Date.class;
-            case 5:
-            case 6:
-                return Boolean.class;
         }
         return String.class;
     }
