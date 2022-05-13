@@ -50,7 +50,6 @@ public class FileManager {
     private JLabel size;
     private JLabel type;
 
-    /* GUI options/containers for new File/Directory creation. */
     private JPanel newFilePanel;
     private JRadioButton newTypeFile;
     private JTextField name;
@@ -64,7 +63,6 @@ public class FileManager {
             desktop = Desktop.getDesktop();
 
             JPanel detailView = new JPanel(new BorderLayout(3, 3));
-            // fileTableModel = new FileTableModel();
 
             table = new JTable();
             table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
@@ -86,7 +84,6 @@ public class FileManager {
                     new Dimension((int) d.getWidth(), (int) d.getHeight() / 2));
             detailView.add(tableScroll, BorderLayout.CENTER);
 
-            // the File tree
             DefaultMutableTreeNode root = new DefaultMutableTreeNode();
             treeModel = new DefaultTreeModel(root);
 
@@ -100,20 +97,16 @@ public class FileManager {
                         }
                     };
 
-            // show the file system roots.
             File[] roots = fileSystemView.getRoots();
             for (File fileSystemRoot : roots) {
                 DefaultMutableTreeNode node = new DefaultMutableTreeNode(fileSystemRoot);
                 root.add(node);
-                // showChildren(node);
-                //
                 File[] files = fileSystemView.getFiles(fileSystemRoot, true);
                 for (File file : files) {
                     if (file.isDirectory()) {
                         node.add(new DefaultMutableTreeNode(file));
                     }
                 }
-                //
             }
 
             tree = new JTree(treeModel);
@@ -129,7 +122,6 @@ public class FileManager {
             Dimension widePreferred = new Dimension(200, (int) preferredSize.getHeight());
             treeScroll.setPreferredSize(widePreferred);
 
-            // details for a File
             JPanel fileMainDetails = new JPanel(new BorderLayout(4, 2));
             fileMainDetails.setBorder(new EmptyBorder(0, 6, 0, 6));
 
@@ -193,10 +185,8 @@ public class FileManager {
                     });
             toolBar.add(editFile);
 
-            // Check the actions are supported on this platform!
             openFile.setEnabled(desktop.isSupported(Desktop.Action.OPEN));
             editFile.setEnabled(desktop.isSupported(Desktop.Action.EDIT));
-            // printFile.setEnabled(desktop.isSupported(Desktop.Action.PRINT));
 
             toolBar.addSeparator();
 
@@ -252,7 +242,6 @@ public class FileManager {
     }
 
     public void showRootFile() {
-        // ensure the main files are displayed
         tree.setSelectionInterval(0, 0);
     }
 
@@ -267,7 +256,6 @@ public class FileManager {
                 return treePath;
             }
         }
-        // not found!
         return null;
     }
 
@@ -289,17 +277,12 @@ public class FileManager {
                         currentFile.renameTo(new File(currentFile.getParentFile(), renameTo));
                 if (renamed) {
                     if (directory) {
-                        // rename the node..
-
-                        // delete the current node..
                         TreePath currentPath = findTreePath(currentFile);
                         System.out.println(currentPath);
                         DefaultMutableTreeNode currentNode =
                                 (DefaultMutableTreeNode) currentPath.getLastPathComponent();
 
                         treeModel.removeNodeFromParent(currentNode);
-
-                        // add a new node..
                     }
 
                     showChildren(parentNode);
@@ -338,7 +321,6 @@ public class FileManager {
                 boolean directory = currentFile.isDirectory();
                 if (FileUtils.deleteQuietly(currentFile)) {
                     if (directory) {
-                        // delete the node..
                         TreePath currentPath = findTreePath(currentFile);
                         System.out.println(currentPath);
                         DefaultMutableTreeNode currentNode =
@@ -407,7 +389,6 @@ public class FileManager {
                             (DefaultMutableTreeNode) parentPath.getLastPathComponent();
 
                     if (file.isDirectory()) {
-                        // add the new node..
                         DefaultMutableTreeNode newNode = new DefaultMutableTreeNode(file);
 
                         TreePath currentPath = findTreePath(currentFile);
@@ -439,7 +420,6 @@ public class FileManager {
         gui.repaint();
     }
 
-    /** Update the table on the EDT */
     private void setTableData(final File[] files) {
         SwingUtilities.invokeLater(
                 new Runnable() {
@@ -455,7 +435,6 @@ public class FileManager {
                         if (!cellSizesSet) {
                             Icon icon = fileSystemView.getSystemIcon(files[0]);
 
-                            // size adjustment to better account for icons
                             table.setRowHeight(icon.getIconHeight() + rowIconPadding);
 
                             setColumnWidth(0, -1);
@@ -477,10 +456,8 @@ public class FileManager {
     private void setColumnWidth(int column, int width) {
         TableColumn tableColumn = table.getColumnModel().getColumn(column);
         if (width < 0) {
-            // use the preferred width of the header..
             JLabel label = new JLabel((String) tableColumn.getHeaderValue());
             Dimension preferred = label.getPreferredSize();
-            // altered 10->14 as per camickr comment.
             width = (int) preferred.getWidth() + 14;
         }
         tableColumn.setPreferredWidth(width);
@@ -488,10 +465,6 @@ public class FileManager {
         tableColumn.setMinWidth(width);
     }
 
-    /**
-     * Add the files that are contained within the directory of this node. Thanks to Hovercraft Full
-     * Of Eels.
-     */
     private void showChildren(final DefaultMutableTreeNode node) {
         tree.setEnabled(false);
         progressBar.setVisible(true);
@@ -503,7 +476,7 @@ public class FileManager {
                     public Void doInBackground() {
                         File file = (File) node.getUserObject();
                         if (file.isDirectory()) {
-                            File[] files = fileSystemView.getFiles(file, true); // !!
+                            File[] files = fileSystemView.getFiles(file, true);
                             if (node.isLeaf()) {
                                 for (File child : files) {
                                     if (child.isDirectory()) {
@@ -533,7 +506,6 @@ public class FileManager {
         worker.execute();
     }
 
-    /** Update the File details view with the details of this File. */
     private void setFileDetails(File file) {
         currentFile = file;
         Icon icon = fileSystemView.getSystemIcon(file);
@@ -552,43 +524,11 @@ public class FileManager {
         gui.repaint();
     }
 
-    public static boolean copyFile(File from, File to) throws IOException {
-
-        boolean created = to.createNewFile();
-
-        if (created) {
-            FileChannel fromChannel = null;
-            FileChannel toChannel = null;
-            try {
-                fromChannel = new FileInputStream(from).getChannel();
-                toChannel = new FileOutputStream(to).getChannel();
-
-                toChannel.transferFrom(fromChannel, 0, fromChannel.size());
-
-                // set the flags of the to the same as the from
-                to.setReadable(from.canRead());
-                to.setWritable(from.canWrite());
-                to.setExecutable(from.canExecute());
-            } finally {
-                if (fromChannel != null) {
-                    fromChannel.close();
-                }
-                if (toChannel != null) {
-                    toChannel.close();
-                }
-                return false;
-            }
-        }
-        return created;
-    }
-
     public static void main(String[] args) {
         SwingUtilities.invokeLater(
                 new Runnable() {
                     public void run() {
                         try {
-                            // Significantly improves the look of the output in
-                            // terms of the file names returned by FileSystemView!
                             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
                         } catch (Exception weTried) {
                         }
@@ -619,7 +559,6 @@ public class FileManager {
     }
 }
 
-/** A TableModel to hold File[]. */
 class FileTableModel extends AbstractTableModel {
 
     private File[] files;
@@ -689,7 +628,6 @@ class FileTableModel extends AbstractTableModel {
     }
 }
 
-/** A TreeCellRenderer for a File. */
 class FileTreeCellRenderer extends DefaultTreeCellRenderer {
 
     private FileSystemView fileSystemView;
